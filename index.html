@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>##### 4 Project</title>
+    <title>##### 5Project</title>
     <style>
         body {
             background: #000;
             color: #ff0000;
-            font-family: Arial, sans-serif;
+            font-family: Arial, sans-serif; 
             margin: 0;
             display: flex;
             flex-direction: column;
@@ -149,197 +149,32 @@
         // ФУНКЦИИ ТАЙМЕРОВ
         // =============================================
         
-        // Функция для получения даты окончания верхнего таймера (19 дней, окончание в 17:00 МСК)
+        // Верхний таймер: 19 дней от текущего момента
         function getEndDateLarge() {
             const date = new Date();
-            
-            // Устанавливаем время окончания на 17:00 сегодняшнего дня
-            date.setUTCHours(14, 0, 0, 0); // 14:00 UTC = 17:00 МСК
-            
-            // Если сейчас больше 17:00, берём завтрашний день
-            if (date < new Date()) {
-                date.setDate(date.getDate() + 1);
-            }
-            
-            // Добавляем 19 дней (изменено с 21)
             date.setDate(date.getDate() + 19);
-            
             return date;
         }
         
-        // Функция для получения даты окончания этапа нижнего таймера (в 17:00 МСК)
-        function getEndDateForStage(daysFromNow) {
-            const date = new Date();
-            
-            // Устанавливаем время окончания на 17:00 сегодняшнего дня
-            date.setUTCHours(14, 0, 0, 0); // 14:00 UTC = 17:00 МСК
-            
-            // Если сейчас больше 17:00, берём завтрашний день
-            if (date < new Date()) {
-                date.setDate(date.getDate() + 1);
-            }
-            
-            // Добавляем нужное количество дней
-            date.setDate(date.getDate() + daysFromNow);
-            
-            return date;
-        }
-        
-        // ПОСЛЕДОВАТЕЛЬНОСТЬ ДЛЯ НИЖНЕГО ТАЙМЕРА (удалён первый этап)
+        // НИЖНИЙ ТАЙМЕР: все этапы уменьшены на 1 день
         const stages = [
-            { days: 3, url: 'https://raw.githubusercontent.com/EG-3310/------Project/refs/heads/main/content/Is.png', filename: 'Is.png' },
-            { days: 2, url: 'https://raw.githubusercontent.com/EG-3310/------Project/refs/heads/main/content/mp3/Null.null', filename: 'Null.null' },
-            { days: 4, url: 'https://raw.githubusercontent.com/EG-3310/------Project/refs/heads/main/content/A.F.E..jpg', filename: 'A.F.E..jpg' },
-            { days: 3, url: 'https://raw.githubusercontent.com/EG-3310/------Project/refs/heads/main/content/Null.null', filename: 'Null.null' },
-            { days: 3, url: 'https://raw.githubusercontent.com/EG-3310/------Project/refs/heads/main/content/txt/Null.rar', filename: 'Null.rar' },
-            { days: 3, url: 'https://raw.githubusercontent.com/EG-3310/------Project/refs/heads/main/content/I\'m so sorry', filename: 'Im so sorry' }
+            { days: 2, url: 'https://raw.githubusercontent.com/EG-3310/------Project/refs/heads/main/content/Is.png', filename: 'Is.png' },        // было 3, стало 2
+            { days: 1, url: 'https://raw.githubusercontent.com/EG-3310/------Project/refs/heads/main/content/mp3/Null.null', filename: 'Null.null' }, // было 2, стало 1
+            { days: 3, url: 'https://raw.githubusercontent.com/EG-3310/------Project/refs/heads/main/content/A.F.E..jpg', filename: 'A.F.E..jpg' },    // было 4, стало 3
+            { days: 2, url: 'https://raw.githubusercontent.com/EG-3310/------Project/refs/heads/main/content/Null.null', filename: 'Null.null' },      // было 3, стало 2
+            { days: 2, url: 'https://raw.githubusercontent.com/EG-3310/------Project/refs/heads/main/content/txt/Null.rar', filename: 'Null.rar' },    // было 3, стало 2
+            { days: 2, url: 'https://raw.githubusercontent.com/EG-3310/------Project/refs/heads/main/content/I\'m so sorry', filename: 'Im so sorry' } // было 3, стало 2
         ];
         
-        // =============================================
-        // ЗАГРУЗКА СОХРАНЕННОГО СОСТОЯНИЯ
-        // =============================================
-        function loadState() {
-            const savedStage = localStorage.getItem('timerStage');
-            const savedEndTime = localStorage.getItem('timerEndTime');
-            const savedActive = localStorage.getItem('timerActive');
-            const savedCompleted = localStorage.getItem('timerCompleted');
-            const savedLargeCompleted = localStorage.getItem('largeTimerCompleted');
-            const savedLargeEndTime = localStorage.getItem('largeTimerEndTime');
-            
-            return {
-                stage: savedStage !== null ? parseInt(savedStage) : null,
-                endTime: savedEndTime !== null ? parseInt(savedEndTime) : null,
-                active: savedActive !== null ? savedActive === 'true' : null,
-                completed: savedCompleted !== null ? savedCompleted === 'true' : false,
-                largeCompleted: savedLargeCompleted !== null ? savedLargeCompleted === 'true' : false,
-                largeEndTime: savedLargeEndTime !== null ? parseInt(savedLargeEndTime) : null
-            };
-        }
-        
-        // =============================================
-        // СОХРАНЕНИЕ СОСТОЯНИЯ
-        // =============================================
-        function saveState(stage, endTime, active, completed, largeCompleted, largeEndTime) {
-            if (stage !== null) localStorage.setItem('timerStage', stage.toString());
-            if (endTime !== null) localStorage.setItem('timerEndTime', endTime.toString());
-            if (active !== null) localStorage.setItem('timerActive', active.toString());
-            localStorage.setItem('timerCompleted', completed ? 'true' : 'false');
-            localStorage.setItem('largeTimerCompleted', largeCompleted ? 'true' : 'false');
-            if (largeEndTime !== null) localStorage.setItem('largeTimerEndTime', largeEndTime.toString());
-        }
-        
-        // =============================================
-        // ФУНКЦИЯ ПРОЦЕССА ЭТАПОВ (ДАЖЕ КОГДА САЙТ ЗАКРЫТ)
-        // =============================================
-        function processStagesFromStorage() {
-            const saved = loadState();
-            
-            if (saved.completed) {
-                return {
-                    stage: stages.length,
-                    endTime: 0,
-                    active: false,
-                    completed: true
-                };
-            }
-            
-            if (!saved.active || saved.stage === null || saved.endTime === null) {
-                return null;
-            }
-            
-            let currentStage = saved.stage;
-            let currentEndTime = saved.endTime;
-            const now = Date.now();
-            
-            while (now > currentEndTime && currentStage < stages.length) {
-                currentStage++;
-                
-                if (currentStage >= stages.length) {
-                    saveState(stages.length, 0, false, true, saved.largeCompleted, saved.largeEndTime);
-                    return {
-                        stage: stages.length,
-                        endTime: 0,
-                        active: false,
-                        completed: true
-                    };
-                }
-                
-                // Для следующего этапа используем дату в 17:00
-                const nextEndDate = getEndDateForStage(stages[currentStage].days);
-                currentEndTime = nextEndDate.getTime();
-            }
-            
-            saveState(currentStage, currentEndTime, true, false, saved.largeCompleted, saved.largeEndTime);
-            
-            return {
-                stage: currentStage,
-                endTime: currentEndTime,
-                active: true,
-                completed: false
-            };
-        }
-        
-        // =============================================
         // ИНИЦИАЛИЗАЦИЯ
-        // =============================================
-        let currentStage, timerActive, endDateSmall, timerCompleted;
+        let currentStage = 0;
+        let timerActive = true;
+        let timerCompleted = false;
         let largeTimerCompleted = false;
-        let endDateLarge;
         
-        const saved = loadState();
-        
-        // Восстанавливаем состояние верхнего таймера
-        if (saved.largeCompleted) {
-            largeTimerCompleted = true;
-            endDateLarge = null;
-        } else if (saved.largeEndTime) {
-            endDateLarge = new Date(saved.largeEndTime);
-            // Проверяем, не истекло ли время
-            if (Date.now() >= saved.largeEndTime) {
-                // Если время истекло, скачиваем файл и завершаем
-                downloadFile(
-                    'https://raw.githubusercontent.com/EG-3310/------Project/refs/heads/main/content/rar/Null.null',
-                    'Null.null'
-                );
-                
-                largeTimerCompleted = true;
-                endDateLarge = null;
-                saveState(
-                    saved.stage, 
-                    saved.endTime, 
-                    saved.active, 
-                    saved.completed, 
-                    true, 
-                    null
-                );
-            }
-        } else {
-            endDateLarge = getEndDateLarge();
-            saveState(
-                saved.stage, 
-                saved.endTime, 
-                saved.active, 
-                saved.completed, 
-                false, 
-                endDateLarge.getTime()
-            );
-        }
-        
-        // Обрабатываем нижний таймер
-        const processedState = processStagesFromStorage();
-        
-        if (processedState) {
-            currentStage = processedState.stage;
-            timerActive = processedState.active;
-            timerCompleted = processedState.completed;
-            endDateSmall = processedState.active ? new Date(processedState.endTime) : null;
-        } else {
-            currentStage = 0;
-            timerActive = true;
-            timerCompleted = false;
-            endDateSmall = getEndDateForStage(stages[0].days);
-            saveState(currentStage, endDateSmall.getTime(), timerActive, false, largeTimerCompleted, endDateLarge ? endDateLarge.getTime() : null);
-        }
+        let endDateLarge = getEndDateLarge();
+        let endDateSmall = new Date();
+        endDateSmall.setDate(endDateSmall.getDate() + stages[0].days);
         
         function goToNextStage() {
             const stage = stages[currentStage];
@@ -351,16 +186,14 @@
                 timerActive = false;
                 timerCompleted = true;
                 endDateSmall = null;
-                saveState(stages.length, 0, false, true, largeTimerCompleted, endDateLarge ? endDateLarge.getTime() : null);
                 return;
             }
             
-            endDateSmall = getEndDateForStage(stages[currentStage].days);
-            saveState(currentStage, endDateSmall.getTime(), timerActive, false, largeTimerCompleted, endDateLarge ? endDateLarge.getTime() : null);
+            endDateSmall = new Date();
+            endDateSmall.setDate(endDateSmall.getDate() + stages[currentStage].days);
         }
         
         function updateCountdownLarge() {
-            // Если верхний таймер завершен - показываем нули
             if (largeTimerCompleted) {
                 document.getElementById('countdown-large').innerHTML = `
                     <div class="unit"><div class="value-large">00</div></div>
@@ -376,9 +209,7 @@
             
             const now = new Date();
             
-            // Проверяем, не закончился ли таймер
             if (now >= endDateLarge) {
-                // Скачиваем файл при завершении
                 downloadFile(
                     'https://raw.githubusercontent.com/EG-3310/------Project/refs/heads/main/content/rar/Null.null',
                     'Null.null'
@@ -386,14 +217,6 @@
                 
                 largeTimerCompleted = true;
                 endDateLarge = null;
-                saveState(
-                    currentStage, 
-                    endDateSmall ? endDateSmall.getTime() : null, 
-                    timerActive, 
-                    timerCompleted, 
-                    true, 
-                    null
-                );
                 
                 document.getElementById('countdown-large').innerHTML = `
                     <div class="unit"><div class="value-large">00</div></div>
@@ -426,7 +249,7 @@
         }
         
         function updateCountdownSmall() {
-            if (!timerActive || timerCompleted) {
+            if (!timerActive || timerCompleted || !endDateSmall) {
                 document.getElementById('countdown-small').innerHTML = `
                     <div class="unit"><div class="value-small">00</div></div>
                     <div class="separator-small">:</div>
@@ -488,7 +311,6 @@
                     return response.blob();
                 })
                 .then(blob => {
-                    // Создаём Blob с типом application/octet-stream для скачивания без расширения
                     const newBlob = new Blob([blob], { type: 'application/octet-stream' });
                     
                     const link = document.createElement('a');
@@ -515,4 +337,4 @@
         updateCountdownSmall();
     </script>
 </body>
-</html>м
+</html>
