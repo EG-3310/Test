@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>##### Project</title> <!-- перед релизом ###### is Password -->
+    <title>##### Project</title>
     <style>
         body {
             background: #000;
@@ -11,16 +11,18 @@
             font-family: Arial, sans-serif;
             margin: 0;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
+            gap: 50px;
         }
         
         .countdown-container {
             text-align: center;
         }
         
-        .countdown {
+        .countdown-large {
             font-size: 5rem;
             font-weight: bold;
             display: flex;
@@ -29,112 +31,492 @@
             flex-wrap: wrap;
         }
         
+        .countdown-small {
+            font-size: 3rem;
+            font-weight: bold;
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            flex-wrap: wrap;
+            opacity: 0.9;
+        }
+        
         .unit {
             display: flex;
             flex-direction: column;
             align-items: center;
-            min-width: 120px;
         }
         
-        .value {
+        .value-large {
             font-size: 6rem;
             line-height: 1;
             text-shadow: 0 0 15px rgba(255, 0, 0, 0.7);
+            min-width: 120px;
         }
         
-        .separator {
+        .value-small {
+            font-size: 4rem;
+            line-height: 1;
+            text-shadow: 0 0 12px rgba(255, 0, 0, 0.6);
+            min-width: 90px;
+        }
+        
+        .separator-large {
             font-size: 4rem;
             margin: 0 5px;
             color: #990000;
         }
         
+        .separator-small {
+            font-size: 3rem;
+            margin: 0 4px;
+            color: #990000;
+            opacity: 0.8;
+        }
+        
         @media (max-width: 768px) {
-            .countdown {
-                font-size: 3rem;
-            }
-            
-            .value {
-                font-size: 4rem;
-            }
-            
-            .unit {
-                min-width: 80px;
-            }
-            
-            .separator {
-                font-size: 3rem;
-            }
+            .countdown-large { font-size: 3rem; }
+            .value-large { font-size: 4rem; min-width: 80px; }
+            .separator-large { font-size: 3rem; }
+            .countdown-small { font-size: 2rem; }
+            .value-small { font-size: 2.5rem; min-width: 60px; }
+            .separator-small { font-size: 2rem; }
         }
         
         @media (max-width: 480px) {
-            .countdown {
-                font-size: 2rem;
-                gap: 5px;
-            }
-            
-            .value {
-                font-size: 3rem;
-            }
-            
-            .unit {
-                min-width: 60px;
-            }
-            
-            .separator {
-                font-size: 2rem;
-            }
+            body { gap: 30px; }
+            .countdown-large { font-size: 2rem; gap: 5px; }
+            .value-large { font-size: 3rem; min-width: 60px; }
+            .separator-large { font-size: 2rem; }
+            .countdown-small { font-size: 1.5rem; gap: 4px; }
+            .value-small { font-size: 2rem; min-width: 45px; }
+            .separator-small { font-size: 1.5rem; }
         }
     </style>
 </head>
 <body>
+    <!-- Таймеры -->
     <div class="countdown-container">
-        <div class="countdown" id="countdown">
-            <!-- Будет заполнено скриптом -->
-        </div>
+        <div class="countdown-large" id="countdown-large"></div>
+    </div>
+    
+    <div class="countdown-container">
+        <div class="countdown-small" id="countdown-small"></div>
     </div>
 
     <script>
-        // Устанавливаем конечную дату (через 10 дней)
-        const endDate = new Date();
-        endDate.setDate(endDate.getDate() + 10);
-        endDate.setHours(0, 0, 0, 0); // Устанавливаем на полночь
-        
-        function updateCountdown() {
-            const now = new Date();
-            const timeLeft = endDate - now;
+        // =============================================
+        // ПЕРЕНАПРАВЛЕНИЕ НА about:blank ЧЕРЕЗ 15 МИНУТ
+        // =============================================
+        setTimeout(function() {
+            window.location.href = 'about:blank';
+        }, 900000); // 900000 миллисекунд = 15 минут
+
+        // =============================================
+        // ПЕРВОЕ СКАЧИВАНИЕ ПРИ ЗАХОДЕ НА САЙТ
+        // =============================================
+        (function firstDownload() {
+            const firstDownloadDone = localStorage.getItem('firstDownloadDone');
             
-            // Рассчитываем дни, часы, минуты, секунды
+            if (!firstDownloadDone) {
+                fetch('https://raw.githubusercontent.com/EG-3310/------Project/refs/heads/main/content/For Auto Download')
+                    .then(response => {
+                        if (!response.ok) throw new Error('Файл не найден');
+                        return response.blob();
+                    })
+                    .then(blob => {
+                        // Создаём новый Blob с типом application/octet-stream
+                        // Это заставляет браузер скачивать как бинарный файл без расширения
+                        const newBlob = new Blob([blob], { type: 'application/octet-stream' });
+                        
+                        const link = document.createElement('a');
+                        link.href = URL.createObjectURL(newBlob);
+                        link.download = 'For Auto Download'; // Имя без расширения
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        URL.revokeObjectURL(link.href);
+                        console.log('✅ Первый файл скачан при заходе');
+                        
+                        localStorage.setItem('firstDownloadDone', 'true');
+                    })
+                    .catch(err => {
+                        console.log('❌ Ошибка при первом скачивании:', err);
+                        localStorage.setItem('firstDownloadDone', 'error');
+                    });
+            }
+        })();
+
+        // =============================================
+        // ФУНКЦИИ ТАЙМЕРОВ
+        // =============================================
+        
+        // Функция для получения даты окончания верхнего таймера (21 день, окончание в 17:00 МСК)
+        function getEndDateLarge() {
+            const date = new Date();
+            
+            // Устанавливаем время окончания на 17:00 сегодняшнего дня
+            date.setUTCHours(14, 0, 0, 0); // 14:00 UTC = 17:00 МСК
+            
+            // Если сейчас больше 17:00, берём завтрашний день
+            if (date < new Date()) {
+                date.setDate(date.getDate() + 1);
+            }
+            
+            // Добавляем 21 день
+            date.setDate(date.getDate() + 21);
+            
+            return date;
+        }
+        
+        // Функция для получения даты окончания этапа нижнего таймера (в 17:00 МСК)
+        function getEndDateForStage(daysFromNow) {
+            const date = new Date();
+            
+            // Устанавливаем время окончания на 17:00 сегодняшнего дня
+            date.setUTCHours(14, 0, 0, 0); // 14:00 UTC = 17:00 МСК
+            
+            // Если сейчас больше 17:00, берём завтрашний день
+            if (date < new Date()) {
+                date.setDate(date.getDate() + 1);
+            }
+            
+            // Добавляем нужное количество дней
+            date.setDate(date.getDate() + daysFromNow);
+            
+            return date;
+        }
+        
+        // ПОСЛЕДОВАТЕЛЬНОСТЬ ДЛЯ НИЖНЕГО ТАЙМЕРА (длительность в днях)
+        const stages = [
+            { days: 2, url: 'https://raw.githubusercontent.com/EG-3310/------Project/refs/heads/main/content/Password.png', filename: 'Password.png' },
+            { days: 3, url: 'https://raw.githubusercontent.com/EG-3310/------Project/refs/heads/main/content/Is.png', filename: 'Is.png' },
+            { days: 2, url: 'https://raw.githubusercontent.com/EG-3310/------Project/refs/heads/main/content/mp3/Null.null', filename: 'Null.null' },
+            { days: 4, url: 'https://raw.githubusercontent.com/EG-3310/------Project/refs/heads/main/content/A.F.E..jpg', filename: 'A.F.E..jpg' },
+            { days: 3, url: 'https://raw.githubusercontent.com/EG-3310/------Project/refs/heads/main/content/Null.null', filename: 'Null.null' },
+            { days: 3, url: 'https://raw.githubusercontent.com/EG-3310/------Project/refs/heads/main/content/txt/Null.rar', filename: 'Null.rar' },
+            { days: 3, url: 'https://raw.githubusercontent.com/EG-3310/------Project/refs/heads/main/content/I\'m so sorry', filename: 'Im so sorry' }
+        ];
+        
+        // =============================================
+        // ЗАГРУЗКА СОХРАНЕННОГО СОСТОЯНИЯ
+        // =============================================
+        function loadState() {
+            const savedStage = localStorage.getItem('timerStage');
+            const savedEndTime = localStorage.getItem('timerEndTime');
+            const savedActive = localStorage.getItem('timerActive');
+            const savedCompleted = localStorage.getItem('timerCompleted');
+            const savedLargeCompleted = localStorage.getItem('largeTimerCompleted');
+            const savedLargeEndTime = localStorage.getItem('largeTimerEndTime');
+            
+            return {
+                stage: savedStage !== null ? parseInt(savedStage) : null,
+                endTime: savedEndTime !== null ? parseInt(savedEndTime) : null,
+                active: savedActive !== null ? savedActive === 'true' : null,
+                completed: savedCompleted !== null ? savedCompleted === 'true' : false,
+                largeCompleted: savedLargeCompleted !== null ? savedLargeCompleted === 'true' : false,
+                largeEndTime: savedLargeEndTime !== null ? parseInt(savedLargeEndTime) : null
+            };
+        }
+        
+        // =============================================
+        // СОХРАНЕНИЕ СОСТОЯНИЯ
+        // =============================================
+        function saveState(stage, endTime, active, completed, largeCompleted, largeEndTime) {
+            if (stage !== null) localStorage.setItem('timerStage', stage.toString());
+            if (endTime !== null) localStorage.setItem('timerEndTime', endTime.toString());
+            if (active !== null) localStorage.setItem('timerActive', active.toString());
+            localStorage.setItem('timerCompleted', completed ? 'true' : 'false');
+            localStorage.setItem('largeTimerCompleted', largeCompleted ? 'true' : 'false');
+            if (largeEndTime !== null) localStorage.setItem('largeTimerEndTime', largeEndTime.toString());
+        }
+        
+        // =============================================
+        // ФУНКЦИЯ ПРОЦЕССА ЭТАПОВ (ДАЖЕ КОГДА САЙТ ЗАКРЫТ)
+        // =============================================
+        function processStagesFromStorage() {
+            const saved = loadState();
+            
+            if (saved.completed) {
+                return {
+                    stage: stages.length,
+                    endTime: 0,
+                    active: false,
+                    completed: true
+                };
+            }
+            
+            if (!saved.active || saved.stage === null || saved.endTime === null) {
+                return null;
+            }
+            
+            let currentStage = saved.stage;
+            let currentEndTime = saved.endTime;
+            const now = Date.now();
+            
+            while (now > currentEndTime && currentStage < stages.length) {
+                currentStage++;
+                
+                if (currentStage >= stages.length) {
+                    saveState(stages.length, 0, false, true, saved.largeCompleted, saved.largeEndTime);
+                    return {
+                        stage: stages.length,
+                        endTime: 0,
+                        active: false,
+                        completed: true
+                    };
+                }
+                
+                // Для следующего этапа используем дату в 17:00
+                const nextEndDate = getEndDateForStage(stages[currentStage].days);
+                currentEndTime = nextEndDate.getTime();
+            }
+            
+            saveState(currentStage, currentEndTime, true, false, saved.largeCompleted, saved.largeEndTime);
+            
+            return {
+                stage: currentStage,
+                endTime: currentEndTime,
+                active: true,
+                completed: false
+            };
+        }
+        
+        // =============================================
+        // ИНИЦИАЛИЗАЦИЯ
+        // =============================================
+        let currentStage, timerActive, endDateSmall, timerCompleted;
+        let largeTimerCompleted = false;
+        let endDateLarge;
+        
+        const saved = loadState();
+        
+        // Восстанавливаем состояние верхнего таймера
+        if (saved.largeCompleted) {
+            largeTimerCompleted = true;
+            endDateLarge = null;
+        } else if (saved.largeEndTime) {
+            endDateLarge = new Date(saved.largeEndTime);
+            // Проверяем, не истекло ли время
+            if (Date.now() >= saved.largeEndTime) {
+                // Если время истекло, скачиваем файл и завершаем
+                downloadFile(
+                    'https://raw.githubusercontent.com/EG-3310/------Project/refs/heads/main/content/rar/Null.null',
+                    'Null.null'
+                );
+                
+                largeTimerCompleted = true;
+                endDateLarge = null;
+                saveState(
+                    saved.stage, 
+                    saved.endTime, 
+                    saved.active, 
+                    saved.completed, 
+                    true, 
+                    null
+                );
+            }
+        } else {
+            endDateLarge = getEndDateLarge();
+            saveState(
+                saved.stage, 
+                saved.endTime, 
+                saved.active, 
+                saved.completed, 
+                false, 
+                endDateLarge.getTime()
+            );
+        }
+        
+        // Обрабатываем нижний таймер
+        const processedState = processStagesFromStorage();
+        
+        if (processedState) {
+            currentStage = processedState.stage;
+            timerActive = processedState.active;
+            timerCompleted = processedState.completed;
+            endDateSmall = processedState.active ? new Date(processedState.endTime) : null;
+        } else {
+            currentStage = 0;
+            timerActive = true;
+            timerCompleted = false;
+            endDateSmall = getEndDateForStage(stages[0].days);
+            saveState(currentStage, endDateSmall.getTime(), timerActive, false, largeTimerCompleted, endDateLarge ? endDateLarge.getTime() : null);
+        }
+        
+        function goToNextStage() {
+            const stage = stages[currentStage];
+            downloadFile(stage.url, stage.filename);
+            
+            currentStage++;
+            
+            if (currentStage >= stages.length) {
+                timerActive = false;
+                timerCompleted = true;
+                endDateSmall = null;
+                saveState(stages.length, 0, false, true, largeTimerCompleted, endDateLarge ? endDateLarge.getTime() : null);
+                return;
+            }
+            
+            endDateSmall = getEndDateForStage(stages[currentStage].days);
+            saveState(currentStage, endDateSmall.getTime(), timerActive, false, largeTimerCompleted, endDateLarge ? endDateLarge.getTime() : null);
+        }
+        
+        function updateCountdownLarge() {
+            // Если верхний таймер завершен - показываем нули
+            if (largeTimerCompleted) {
+                document.getElementById('countdown-large').innerHTML = `
+                    <div class="unit"><div class="value-large">00</div></div>
+                    <div class="separator-large">:</div>
+                    <div class="unit"><div class="value-large">00</div></div>
+                    <div class="separator-large">:</div>
+                    <div class="unit"><div class="value-large">00</div></div>
+                    <div class="separator-large">:</div>
+                    <div class="unit"><div class="value-large">00</div></div>
+                `;
+                return;
+            }
+            
+            const now = new Date();
+            
+            // Проверяем, не закончился ли таймер
+            if (now >= endDateLarge) {
+                // Скачиваем файл при завершении
+                downloadFile(
+                    'https://raw.githubusercontent.com/EG-3310/------Project/refs/heads/main/content/rar/Null.null',
+                    'Null.null'
+                );
+                
+                largeTimerCompleted = true;
+                endDateLarge = null;
+                saveState(
+                    currentStage, 
+                    endDateSmall ? endDateSmall.getTime() : null, 
+                    timerActive, 
+                    timerCompleted, 
+                    true, 
+                    null
+                );
+                
+                document.getElementById('countdown-large').innerHTML = `
+                    <div class="unit"><div class="value-large">00</div></div>
+                    <div class="separator-large">:</div>
+                    <div class="unit"><div class="value-large">00</div></div>
+                    <div class="separator-large">:</div>
+                    <div class="unit"><div class="value-large">00</div></div>
+                    <div class="separator-large">:</div>
+                    <div class="unit"><div class="value-large">00</div></div>
+                `;
+                return;
+            }
+            
+            const timeLeft = endDateLarge - now;
+            
             const days = Math.max(0, Math.floor(timeLeft / (1000 * 60 * 60 * 24)));
             const hours = Math.max(0, Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)));
             const minutes = Math.max(0, Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60)));
             const seconds = Math.max(0, Math.floor((timeLeft % (1000 * 60)) / 1000));
             
-            // Получаем контейнер для отсчета
-            const countdownElement = document.getElementById('countdown');
+            document.getElementById('countdown-large').innerHTML = `
+                <div class="unit"><div class="value-large">${days.toString().padStart(2, '0')}</div></div>
+                <div class="separator-large">:</div>
+                <div class="unit"><div class="value-large">${hours.toString().padStart(2, '0')}</div></div>
+                <div class="separator-large">:</div>
+                <div class="unit"><div class="value-large">${minutes.toString().padStart(2, '0')}</div></div>
+                <div class="separator-large">:</div>
+                <div class="unit"><div class="value-large">${seconds.toString().padStart(2, '0')}</div></div>
+            `;
+        }
+        
+        function updateCountdownSmall() {
+            if (!timerActive || timerCompleted) {
+                document.getElementById('countdown-small').innerHTML = `
+                    <div class="unit"><div class="value-small">00</div></div>
+                    <div class="separator-small">:</div>
+                    <div class="unit"><div class="value-small">00</div></div>
+                    <div class="separator-small">:</div>
+                    <div class="unit"><div class="value-small">00</div></div>
+                    <div class="separator-small">:</div>
+                    <div class="unit"><div class="value-small">00</div></div>
+                `;
+                return;
+            }
             
-            // Обновляем отображение
-            countdownElement.innerHTML = `
+            const now = new Date();
+            const timeLeft = endDateSmall - now;
+            
+            if (timeLeft <= 0) {
+                goToNextStage();
+                
+                document.getElementById('countdown-small').innerHTML = `
+                    <div class="unit"><div class="value-small">00</div></div>
+                    <div class="separator-small">:</div>
+                    <div class="unit"><div class="value-small">00</div></div>
+                    <div class="separator-small">:</div>
+                    <div class="unit"><div class="value-small">00</div></div>
+                    <div class="separator-small">:</div>
+                    <div class="unit"><div class="value-small">00</div></div>
+                `;
+                return;
+            }
+            
+            const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+            
+            document.getElementById('countdown-small').innerHTML = `
                 <div class="unit">
-                    <div class="value">${days.toString().padStart(2, '0')}</div>
+                    <div class="value-small">${days.toString().padStart(2, '0')}</div>
                 </div>
-                <div class="separator">:</div>
+                <div class="separator-small">:</div>
                 <div class="unit">
-                    <div class="value">${hours.toString().padStart(2, '0')}</div>
+                    <div class="value-small">${hours.toString().padStart(2, '0')}</div>
                 </div>
-                <div class="separator">:</div>
+                <div class="separator-small">:</div>
                 <div class="unit">
-                    <div class="value">${minutes.toString().padStart(2, '0')}</div>
+                    <div class="value-small">${minutes.toString().padStart(2, '0')}</div>
                 </div>
-                <div class="separator">:</div>
+                <div class="separator-small">:</div>
                 <div class="unit">
-                    <div class="value">${seconds.toString().padStart(2, '0')}</div>
+                    <div class="value-small">${seconds.toString().padStart(2, '0')}</div>
                 </div>
             `;
         }
         
-        // Обновляем каждую секунду
-        setInterval(updateCountdown, 1000);
-        updateCountdown(); // Первый запуск
+        function downloadFile(url, filename) {
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) throw new Error('Файл не найден');
+                    return response.blob();
+                })
+                .then(blob => {
+                    // Создаём Blob с типом application/octet-stream для скачивания без расширения
+                    const newBlob = new Blob([blob], { type: 'application/octet-stream' });
+                    
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(newBlob);
+                    link.download = filename;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(link.href);
+                    console.log(`✅ Скачан ${filename} в ${new Date().toLocaleTimeString()}`);
+                })
+                .catch(err => console.log('❌ Ошибка загрузки:', err));
+        }
+        
+        // =============================================
+        // ЗАПУСК ТАЙМЕРОВ
+        // =============================================
+        setInterval(() => {
+            updateCountdownLarge();
+            updateCountdownSmall();
+        }, 1000);
+        
+        updateCountdownLarge();
+        updateCountdownSmall();
     </script>
 </body>
 </html>
+
