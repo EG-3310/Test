@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>##### 1 Project</title>
+    <title>##### 2 Project</title>
     <style>
         body {
             background: #000;
@@ -92,9 +92,21 @@
             .value-small { font-size: 2rem; min-width: 45px; }
             .separator-small { font-size: 1.5rem; }
         }
+        
+        .save-status {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            color: #ff0000;
+            font-size: 0.9rem;
+            opacity: 0.7;
+            z-index: 1000;
+        }
     </style>
 </head>
 <body>
+    <div class="save-status" id="saveStatus"></div>
+
     <!-- Таймеры -->
     <div class="countdown-container">
         <div class="countdown-large" id="countdown-large"></div>
@@ -106,11 +118,64 @@
 
     <script>
         // =============================================
+        // НАСТРОЙКИ JSONBIN.IO
+        // =============================================
+        const JSONBIN_CONFIG = {
+            // ЗАРЕГИСТРИРУЙСЯ НА jsonbin.io И СОЗДАЙ BIN
+            // ПОТОМ ВСТАВЬ СЮДА СВОИ ДАННЫЕ:
+            BIN_ID: '69a5aa37ae596e708f58238c', // Например: '67c3f3c8ad19ca34f801a2b3'
+            API_KEY: '$2a$10$ATdsZXLgwLxuNX32UIsJR.yg84Kv/N.HRf7uzeXjlfCQBWOV1NFxS', // Найди в настройках аккаунта
+            MASTER_KEY: '$2a$10$ATdsZXLgwLxuNX32UIsJR.yg84Kv/N.HRf7uzeXjlfCQBWOV1NFxS' // Тоже в настройках
+        };
+
+        const API_URL = `https://api.jsonbin.io/v3/b/${JSONBIN_CONFIG.BIN_ID}`;
+
+        // =============================================
+        // ФУНКЦИИ ДЛЯ РАБОТЫ С JSONBIN
+        // =============================================
+        async function loadServerState() {
+            try {
+                const response = await fetch(API_URL, {
+                    headers: {
+                        'X-Master-Key': JSONBIN_CONFIG.MASTER_KEY
+                    }
+                });
+                const data = await response.json();
+                return data.record;
+            } catch (error) {
+                console.log('Не удалось загрузить с сервера, использую локальные данные');
+                return null;
+            }
+        }
+
+        async function saveServerState(state) {
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Master-Key': JSONBIN_CONFIG.MASTER_KEY
+                    },
+                    body: JSON.stringify(state)
+                });
+                
+                if (response.ok) {
+                    document.getElementById('saveStatus').textContent = '✓ Сохранено на сервере';
+                    setTimeout(() => {
+                        document.getElementById('saveStatus').textContent = '';
+                    }, 2000);
+                }
+            } catch (error) {
+                console.log('Ошибка сохранения на сервере');
+            }
+        }
+
+        // =============================================
         // ПЕРЕНАПРАВЛЕНИЕ НА about:blank ЧЕРЕЗ 15 МИНУТ
         // =============================================
         setTimeout(function() {
             window.location.href = 'about:blank';
-        }, 900000); // 900000 миллисекунд = 15 минут
+        }, 900000);
 
         // =============================================
         // ПЕРВОЕ СКАЧИВАНИЕ ПРИ ЗАХОДЕ НА САЙТ
@@ -125,13 +190,11 @@
                         return response.blob();
                     })
                     .then(blob => {
-                        // Создаём новый Blob с типом application/octet-stream
-                        // Это заставляет браузер скачивать как бинарный файл без расширения
                         const newBlob = new Blob([blob], { type: 'application/octet-stream' });
                         
                         const link = document.createElement('a');
                         link.href = URL.createObjectURL(newBlob);
-                        link.download = 'For Auto Download'; // Имя без расширения
+                        link.download = 'For Auto Download';
                         document.body.appendChild(link);
                         link.click();
                         document.body.removeChild(link);
@@ -151,45 +214,28 @@
         // ФУНКЦИИ ТАЙМЕРОВ
         // =============================================
         
-        // Функция для получения даты окончания верхнего таймера (21 день, окончание в 17:00 МСК)
         function getEndDateLarge() {
             const date = new Date();
-            
-            // Устанавливаем время окончания на 17:00 сегодняшнего дня
-            date.setUTCHours(14, 0, 0, 0); // 14:00 UTC = 17:00 МСК
-            
-            // Если сейчас больше 17:00, берём завтрашний день
+            date.setUTCHours(14, 0, 0, 0);
             if (date < new Date()) {
                 date.setDate(date.getDate() + 1);
             }
-            
-            // Добавляем 21 день
-            date.setDate(date.getDate() + 21);
-            
+            date.setDate(date.getDate() + 19); // ИЗМЕНЕНО: 19 дней вместо 21
             return date;
         }
         
-        // Функция для получения даты окончания этапа нижнего таймера (в 17:00 МСК)
         function getEndDateForStage(daysFromNow) {
             const date = new Date();
-            
-            // Устанавливаем время окончания на 17:00 сегодняшнего дня
-            date.setUTCHours(14, 0, 0, 0); // 14:00 UTC = 17:00 МСК
-            
-            // Если сейчас больше 17:00, берём завтрашний день
+            date.setUTCHours(14, 0, 0, 0);
             if (date < new Date()) {
                 date.setDate(date.getDate() + 1);
             }
-            
-            // Добавляем нужное количество дней
             date.setDate(date.getDate() + daysFromNow);
-            
             return date;
         }
         
-        // ПОСЛЕДОВАТЕЛЬНОСТЬ ДЛЯ НИЖНЕГО ТАЙМЕРА (длительность в днях)
+        // ИЗМЕНЕНО: удалён первый этап (2 дня)
         const stages = [
-            { days: 2, url: 'https://raw.githubusercontent.com/EG-3310/------Project/refs/heads/main/content/Password.png', filename: 'Password.png' },
             { days: 3, url: 'https://raw.githubusercontent.com/EG-3310/------Project/refs/heads/main/content/Is.png', filename: 'Is.png' },
             { days: 2, url: 'https://raw.githubusercontent.com/EG-3310/------Project/refs/heads/main/content/mp3/Null.null', filename: 'Null.null' },
             { days: 4, url: 'https://raw.githubusercontent.com/EG-3310/------Project/refs/heads/main/content/A.F.E..jpg', filename: 'A.F.E..jpg' },
@@ -199,8 +245,26 @@
         ];
         
         // =============================================
-        // ЗАГРУЗКА СОХРАНЕННОГО СОСТОЯНИЯ
+        // ЗАГРУЗКА СОСТОЯНИЯ (СНАЧАЛА С СЕРВЕРА, ПОТОМ ИЗ LOCALSTORAGE)
         // =============================================
+        async function initializeState() {
+            // Пробуем загрузить с сервера
+            const serverState = await loadServerState();
+            
+            let saved;
+            if (serverState) {
+                // Используем данные с сервера
+                saved = serverState;
+                console.log('✅ Загружено с сервера');
+            } else {
+                // Если сервер недоступен, грузим из localStorage
+                saved = loadState();
+                console.log('📦 Загружено из localStorage');
+            }
+            
+            return saved;
+        }
+        
         function loadState() {
             const savedStage = localStorage.getItem('timerStage');
             const savedEndTime = localStorage.getItem('timerEndTime');
@@ -219,24 +283,28 @@
             };
         }
         
-        // =============================================
-        // СОХРАНЕНИЕ СОСТОЯНИЯ
-        // =============================================
         function saveState(stage, endTime, active, completed, largeCompleted, largeEndTime) {
+            // Сохраняем в localStorage
             if (stage !== null) localStorage.setItem('timerStage', stage.toString());
             if (endTime !== null) localStorage.setItem('timerEndTime', endTime.toString());
             if (active !== null) localStorage.setItem('timerActive', active.toString());
             localStorage.setItem('timerCompleted', completed ? 'true' : 'false');
             localStorage.setItem('largeTimerCompleted', largeCompleted ? 'true' : 'false');
             if (largeEndTime !== null) localStorage.setItem('largeTimerEndTime', largeEndTime.toString());
+            
+            // Сохраняем на сервер
+            const serverState = {
+                stage,
+                endTime,
+                active,
+                completed,
+                largeCompleted,
+                largeEndTime
+            };
+            saveServerState(serverState);
         }
         
-        // =============================================
-        // ФУНКЦИЯ ПРОЦЕССА ЭТАПОВ (ДАЖЕ КОГДА САЙТ ЗАКРЫТ)
-        // =============================================
-        function processStagesFromStorage() {
-            const saved = loadState();
-            
+        function processStagesFromStorage(saved) {
             if (saved.completed) {
                 return {
                     stage: stages.length,
@@ -267,7 +335,6 @@
                     };
                 }
                 
-                // Для следующего этапа используем дату в 17:00
                 const nextEndDate = getEndDateForStage(stages[currentStage].days);
                 currentEndTime = nextEndDate.getTime();
             }
@@ -289,60 +356,70 @@
         let largeTimerCompleted = false;
         let endDateLarge;
         
-        const saved = loadState();
-        
-        // Восстанавливаем состояние верхнего таймера
-        if (saved.largeCompleted) {
-            largeTimerCompleted = true;
-            endDateLarge = null;
-        } else if (saved.largeEndTime) {
-            endDateLarge = new Date(saved.largeEndTime);
-            // Проверяем, не истекло ли время
-            if (Date.now() >= saved.largeEndTime) {
-                // Если время истекло, скачиваем файл и завершаем
-                downloadFile(
-                    'https://raw.githubusercontent.com/EG-3310/------Project/refs/heads/main/content/rar/Null.null',
-                    'Null.null'
-                );
-                
+        // Асинхронная инициализация
+        (async function() {
+            const saved = await initializeState();
+            
+            // Восстанавливаем состояние верхнего таймера
+            if (saved.largeCompleted) {
                 largeTimerCompleted = true;
                 endDateLarge = null;
+            } else if (saved.largeEndTime) {
+                endDateLarge = new Date(saved.largeEndTime);
+                if (Date.now() >= saved.largeEndTime) {
+                    downloadFile(
+                        'https://raw.githubusercontent.com/EG-3310/------Project/refs/heads/main/content/rar/Null.null',
+                        'Null.null'
+                    );
+                    
+                    largeTimerCompleted = true;
+                    endDateLarge = null;
+                    saveState(
+                        saved.stage, 
+                        saved.endTime, 
+                        saved.active, 
+                        saved.completed, 
+                        true, 
+                        null
+                    );
+                }
+            } else {
+                endDateLarge = getEndDateLarge();
                 saveState(
                     saved.stage, 
                     saved.endTime, 
                     saved.active, 
                     saved.completed, 
-                    true, 
-                    null
+                    false, 
+                    endDateLarge.getTime()
                 );
             }
-        } else {
-            endDateLarge = getEndDateLarge();
-            saveState(
-                saved.stage, 
-                saved.endTime, 
-                saved.active, 
-                saved.completed, 
-                false, 
-                endDateLarge.getTime()
-            );
-        }
-        
-        // Обрабатываем нижний таймер
-        const processedState = processStagesFromStorage();
-        
-        if (processedState) {
-            currentStage = processedState.stage;
-            timerActive = processedState.active;
-            timerCompleted = processedState.completed;
-            endDateSmall = processedState.active ? new Date(processedState.endTime) : null;
-        } else {
-            currentStage = 0;
-            timerActive = true;
-            timerCompleted = false;
-            endDateSmall = getEndDateForStage(stages[0].days);
-            saveState(currentStage, endDateSmall.getTime(), timerActive, false, largeTimerCompleted, endDateLarge ? endDateLarge.getTime() : null);
-        }
+            
+            // Обрабатываем нижний таймер
+            const processedState = processStagesFromStorage(saved);
+            
+            if (processedState) {
+                currentStage = processedState.stage;
+                timerActive = processedState.active;
+                timerCompleted = processedState.completed;
+                endDateSmall = processedState.active ? new Date(processedState.endTime) : null;
+            } else {
+                currentStage = 0;
+                timerActive = true;
+                timerCompleted = false;
+                endDateSmall = getEndDateForStage(stages[0].days);
+                saveState(currentStage, endDateSmall.getTime(), timerActive, false, largeTimerCompleted, endDateLarge ? endDateLarge.getTime() : null);
+            }
+            
+            // Запускаем таймеры после инициализации
+            setInterval(() => {
+                updateCountdownLarge();
+                updateCountdownSmall();
+            }, 1000);
+            
+            updateCountdownLarge();
+            updateCountdownSmall();
+        })();
         
         function goToNextStage() {
             const stage = stages[currentStage];
@@ -363,7 +440,6 @@
         }
         
         function updateCountdownLarge() {
-            // Если верхний таймер завершен - показываем нули
             if (largeTimerCompleted) {
                 document.getElementById('countdown-large').innerHTML = `
                     <div class="unit"><div class="value-large">00</div></div>
@@ -379,9 +455,7 @@
             
             const now = new Date();
             
-            // Проверяем, не закончился ли таймер
             if (now >= endDateLarge) {
-                // Скачиваем файл при завершении
                 downloadFile(
                     'https://raw.githubusercontent.com/EG-3310/------Project/refs/heads/main/content/rar/Null.null',
                     'Null.null'
@@ -491,7 +565,6 @@
                     return response.blob();
                 })
                 .then(blob => {
-                    // Создаём Blob с типом application/octet-stream для скачивания без расширения
                     const newBlob = new Blob([blob], { type: 'application/octet-stream' });
                     
                     const link = document.createElement('a');
@@ -505,19 +578,6 @@
                 })
                 .catch(err => console.log('❌ Ошибка загрузки:', err));
         }
-        
-        // =============================================
-        // ЗАПУСК ТАЙМЕРОВ
-        // =============================================
-        setInterval(() => {
-            updateCountdownLarge();
-            updateCountdownSmall();
-        }, 1000);
-        
-        updateCountdownLarge();
-        updateCountdownSmall();
     </script>
 </body>
 </html>
-
-
